@@ -87,4 +87,4 @@ This is based on a python script created by andrewe1 in the Densha De GO!! Unoff
 This project is provided as-is, with no warranty.  
 SDL2 is licensed under the zlib license.
 
-# Note: I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. 
+# Note: I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. I am also not an avid github user, so I apologize for any issues with the way this was uploaded.
