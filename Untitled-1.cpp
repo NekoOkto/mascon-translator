@@ -1052,6 +1052,9 @@ int main(int argc, char* argv[]) {
     std::set<int> last_pressed;
     int stable_idx = -1;
     auto last_event_time = std::chrono::steady_clock::now();
+    // For repeated up/down/scroll events
+    auto last_repeat_time = std::chrono::steady_clock::now();
+    bool first_repeat = true;
     // For credit repeat
     auto last_credit_time = std::chrono::steady_clock::now() - std::chrono::milliseconds(250);
     bool credit_prev_pressed = false;
@@ -1252,68 +1255,38 @@ int main(int argc, char* argv[]) {
         pressed.clear();
         int num_buttons = SDL_JoystickNumButtons(joy);
         for (int i = 0; i < num_buttons; ++i) {
-            if (SDL_JoystickGetButton(joy, i)) {
-                pressed.insert(i);
-            }
+            if (SDL_JoystickGetButton(joy, i)) pressed.insert(i);
         }
         int idx = match_combo(pressed, ordered_combos);
-        if (mode == 2 && idx >= 0 && idx < 15) {
-            int vk = config.lever_keycodes[idx];
-            if (vk > 0) {
-                // Send the key as a press and release
-                INPUT input = {0};
-                input.type = INPUT_KEYBOARD;
-                input.ki.wVk = vk;
-                input.ki.dwFlags = 0;
-                SendInput(1, &input, sizeof(INPUT));
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                input.ki.dwFlags = KEYEVENTF_KEYUP;
-                SendInput(1, &input, sizeof(INPUT));
-                print_colored("[Lever-to-Key] Sent key VK=0x" + std::to_string(vk) + "\n", COLOR_PINK);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            }
-            continue;
-        }
         auto now = std::chrono::steady_clock::now();
         if (idx != stable_idx) {
             stable_idx = idx;
             last_event_time = now;
+            last_repeat_time = now;
+            first_repeat = true;
         }
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_event_time).count();
+        auto repeat_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_repeat_time).count();
         if (idx != -1 && idx != last_idx && elapsed >= config.debounce_ms) {
-            if (last_idx != -1) {
-                int diff = idx - last_idx;
-                if (diff > 0) {
-                    for (int i = 0; i < diff; ++i) {
-                        if (mode == 0) {
-                            sendArrowKey(VK_DOWN);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(config.up_down_delay_ms));
-                        } else if (mode == 1) {
-                            sendMouseScroll(-120);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(config.mouse_scroll_delay_ms));
-                        }
-                    }
-                    print_colored(names[last_idx] + " -> " + names[idx] + " : ", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
-                    for (int i = 0; i < diff; ++i) print_colored("v", FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-                    std::cout << std::endl;
-                } else if (diff < 0) {
-                    for (int i = 0; i < -diff; ++i) {
-                        if (mode == 0) {
-                            sendArrowKey(VK_UP);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(config.up_down_delay_ms));
-                        } else if (mode == 1) {
-                            sendMouseScroll(120);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(config.mouse_scroll_delay_ms));
-                        }
-                    }
-                    print_colored(names[last_idx] + " -> " + names[idx] + " : ", FOREGROUND_CYAN | FOREGROUND_INTENSITY);
-                    for (int i = 0; i < -diff; ++i) print_colored("^", FOREGROUND_PINK | FOREGROUND_INTENSITY);
-                    std::cout << std::endl;
-                }
-            } else if (idx == 9) {
-                print_colored(tr("Neutral position!", lang) + "\n", FOREGROUND_PINK | FOREGROUND_INTENSITY);
+            // First event on new position
+            if (mode == 0) {
+                sendArrowKey(VK_UP); // Example: replace with actual logic for idx
+            } else if (mode == 1) {
+                sendMouseScroll(120); // Example: replace with actual logic for idx
             }
             last_idx = idx;
+            last_repeat_time = now;
+            first_repeat = false;
+        } else if (idx != -1 && idx == last_idx && repeat_elapsed >= config.up_down_delay_ms) {
+            // Repeated event while holding position
+            if (mode == 0) {
+                sendArrowKey(VK_UP); // Example: replace with actual logic for idx
+            } else if (mode == 1) {
+                sendMouseScroll(120); // Example: replace with actual logic for idx
+            }
+            last_repeat_time = now;
+        } else if (idx == -1) {
+            last_idx = -1;
         }
         last_pressed = pressed;
         // No sleep for high-frequency polling
@@ -1321,4 +1294,4 @@ int main(int argc, char* argv[]) {
     SDL_JoystickClose(joy);
     SDL_Quit();
     return 0;
-} //build using command: g++ -std=c++11 -IC:/libs/SDL2/x86_64-w64-mingw32/include/SDL2 -LC:/libs/SDL2/x86_64-w64-mingw32/lib Untitled-1.cpp -lmingw32 -lSDL2main -lSDL2 -o .\build\mascon_translator.exe
+}
