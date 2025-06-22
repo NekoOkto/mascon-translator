@@ -1,7 +1,12 @@
 # Mascon Lever Input Translator
 
-An easy-to-use Windows console application that translates lever and button inputs from a mascon (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. 
-This is based on a python script created by andrewe1 in the Densha De GO!! Unofficial discord.
+An easy-to-use Windows console application that translates lever and button inputs from a mascon-style (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. 
+
+## Notes
+ - I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. 
+ - I am also not an avid github user, so I apologize for any issues with how this was uploaded or how it is maintained.
+ - The default controls are set for the **Sanying OHC-PC01A**. Support is added for other controllers, but no other controllers have been tested.
+ - This is based on a python script created by andrewe1 in the Densha De GO!! Unofficial discord. 
 
 ## Features
 
@@ -87,4 +92,3 @@ This is based on a python script created by andrewe1 in the Densha De GO!! Unoff
 This project is provided as-is, with no warranty.  
 SDL2 is licensed under the zlib license.
 
-Note: I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. I am also not an avid github user, so I apologize for any issues with how this was uploaded or how it is maintained.
