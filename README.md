@@ -1,6 +1,7 @@
 # Mascon Lever Input Translator
 
-An easy-to-use Windows console application that translates lever and button inputs from a mascon (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. Features multi-language support, customizable input mappings, and profile management.
+An easy-to-use Windows console application that translates lever and button inputs from a mascon (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. 
+This is based on a python script created by andrewe1 in the Densha De GO!! Unofficial discord.
 
 ## Features
 
@@ -11,7 +12,7 @@ An easy-to-use Windows console application that translates lever and button inpu
 - **Profile management**  
   Create, switch, copy, and delete configuration profiles for different controllers and/or games.
 - **Multi-language support**  
-  Menus and messages are available in 16+ languages (translations are AI-generated).
+  Menus and messages are available in 16+ languages **(note: translations are AI-generated. there may be missing or incorrect translations)**.
 
 - **Output mode selection**  
   Choose between Arrow Keys, Mouse Scroll, or Lever-to-Key output modes.
@@ -85,3 +86,5 @@ An easy-to-use Windows console application that translates lever and button inpu
 
 This project is provided as-is, with no warranty.  
 SDL2 is licensed under the zlib license.
+
+# Note: I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. 
