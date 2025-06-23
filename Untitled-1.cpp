@@ -42,7 +42,7 @@ void sendMouseScroll(int amount) {
 }
 
 // Helper to send arrow key presses
-void sendArrowKey(int key) {
+void sendArrowKey(int key, int hold_ms) {
     INPUT input = {0};
     input.type = INPUT_KEYBOARD;
     input.ki.wVk = key;
@@ -50,7 +50,7 @@ void sendArrowKey(int key) {
     SendInput(1, &input, sizeof(INPUT));
 
     // Sleep to simulate key press duration
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(hold_ms));
 
     // Release the key
     input.ki.dwFlags = KEYEVENTF_KEYUP;
@@ -78,6 +78,7 @@ struct Config {
     int debounce_ms = 30;
     int up_down_delay_ms = 25;
     int mouse_scroll_delay_ms = 20;
+    int key_hold_time_ms = 10; // New: how long to hold arrow key down (ms)
     int last_mode = 0;
     int last_joystick = 0;
     std::string language = "en";
@@ -117,6 +118,7 @@ void save_config(const Config& cfg, const std::string& filename) {
         ofs << "debounce_ms=" << cfg.debounce_ms << "\n";
         ofs << "up_down_delay_ms=" << cfg.up_down_delay_ms << "\n";
         ofs << "mouse_scroll_delay_ms=" << cfg.mouse_scroll_delay_ms << "\n";
+        ofs << "key_hold_time_ms=" << cfg.key_hold_time_ms << "\n"; // New
         ofs << "last_mode=" << cfg.last_mode << "\n";
         ofs << "last_joystick=" << cfg.last_joystick << "\n";
         ofs << "language=" << cfg.language << "\n"; // New: save language
@@ -147,6 +149,7 @@ bool load_config(Config& cfg, const std::string& filename) {
         if (line.find("debounce_ms=") == 0) { cfg.debounce_ms = std::stoi(line.substr(12)); ++loaded; continue; }
         if (line.find("up_down_delay_ms=") == 0) { cfg.up_down_delay_ms = std::stoi(line.substr(17)); ++loaded; continue; }
         if (line.find("mouse_scroll_delay_ms=") == 0) { cfg.mouse_scroll_delay_ms = std::stoi(line.substr(22)); ++loaded; continue; }
+        if (line.find("key_hold_time_ms=") == 0) { cfg.key_hold_time_ms = std::stoi(line.substr(16)); ++loaded; continue; } // New
         if (line.find("last_mode=") == 0) { cfg.last_mode = std::stoi(line.substr(10)); ++loaded; continue; }
         if (line.find("last_joystick=") == 0) { cfg.last_joystick = std::stoi(line.substr(14)); ++loaded; continue; }
         if (line.find("language=") == 0) { cfg.language = line.substr(9); ++loaded; continue; } // New: load language
@@ -298,15 +301,17 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
         std::cout << cfg.up_down_delay_ms << "\n";
         print_colored("3. " + tr("Mouse scroll delay ms: ", cfg.language), FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
         std::cout << cfg.mouse_scroll_delay_ms << "\n";
-        print_colored("4. " + tr("Output mode: ", cfg.language), COLOR_WARNING);
+        print_colored("4. " + tr("Key hold time ms: ", cfg.language), FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
+        std::cout << cfg.key_hold_time_ms << "\n";
+        print_colored("5. " + tr("Output mode: ", cfg.language), COLOR_WARNING);
         std::cout << (mode == 0 ? tr("Arrow Keys", cfg.language) : mode == 1 ? tr("Mouse Scroll", cfg.language) : "Lever-to-Key") << "\n";
-        print_colored("5. " + tr("Joystick: ", cfg.language), FOREGROUND_RED | FOREGROUND_GREEN);
+        print_colored("6. " + tr("Joystick: ", cfg.language), FOREGROUND_RED | FOREGROUND_GREEN);
         std::cout << selected_id << std::endl;
-        print_colored("6. " + tr("Remap lever positions", cfg.language) + "\n", FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-        print_colored("7. " + tr("Other input mapping (horns, credit, test, debug)", cfg.language) + "\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
-        print_colored("8. " + tr("Language", cfg.language) + "\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+        print_colored("7. " + tr("Remap lever positions", cfg.language) + "\n", FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        print_colored("8. " + tr("Other input mapping (horns, credit, test, debug)", cfg.language) + "\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+        print_colored("9. " + tr("Language", cfg.language) + "\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
         if (mode == 2) {
-            print_colored("9. " + tr("Set lever-to-key mapping (mode 2)", cfg.language) + "\n", COLOR_PROMPT);
+            print_colored("10. " + tr("Set lever-to-key mapping (mode 2)", cfg.language) + "\n", COLOR_PROMPT);
         }
         std::cout << tr("Enter number to change, '", cfg.language);
         print_colored("r", FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
@@ -601,6 +606,18 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
                 }
             }
         } else if (opt == 4) {
+            print_colored("Enter new key hold time ms (current: ", FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+            std::cout << cfg.key_hold_time_ms << "): ";
+            std::getline(std::cin, input);
+            if (!input.empty()) {
+                try {
+                    cfg.key_hold_time_ms = std::max(1, std::stoi(input));
+                    save_config(cfg, get_profile_filename());
+                } catch (...) {
+                    print_colored(tr("Invalid input! Please enter a valid integer.", cfg.language) + "\n\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+                }
+            }
+        } else if (opt == 5) {
             print_colored("Enter new output mode (", COLOR_PROMPT);
             print_colored("0", COLOR_PROMPT);
             std::cout << " = Arrow Keys, ";
@@ -616,7 +633,7 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
                 else print_colored(tr("Invalid input! Please enter 0, 1 or 2.", cfg.language) + "\n\n", COLOR_ERROR);
                 save_config(cfg, get_profile_filename());
             }
-        } else if (opt == 5) {
+        } else if (opt == 6) {
             print_colored("Available joysticks:\n", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
             for (int i = 0; i < num_joysticks; ++i) {
                 print_colored(std::to_string(i), FOREGROUND_PINK | FOREGROUND_INTENSITY);
@@ -638,7 +655,7 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
                     print_colored(tr("Invalid input! Please enter a valid integer.", cfg.language) + "\n\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
                 }
             }
-        } else if (opt == 6) {
+        } else if (opt == 7) {
             // Remap lever positions
             static const std::vector<std::string> lever_names = {
                 "B9", "B8", "B7", "B6", "B5", "B4", "B3", "B2", "B1", "Neutral",
@@ -702,7 +719,7 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
             save_config(cfg, get_profile_filename());
             print_colored("Remapping complete!\n", FOREGROUND_GREEN | FOREGROUND_INTENSITY);
             continue;
-        } else if (opt == 7) {
+        } else if (opt == 8) {
             // Other input mapping sub-menu
             while (true) {
                 print_colored("\n--- " + tr("Other Input Mapping", cfg.language) + " ---\n", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
@@ -787,7 +804,7 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
                 }
             }
             continue;
-        } else if (opt == 8) {
+        } else if (opt == 9) {
             std::string new_lang = select_language(cfg.language);
             cfg.language = new_lang;
             save_config(cfg, get_profile_filename());
@@ -820,7 +837,7 @@ void settings_menu(Config& cfg, const std::string& filename, int& mode, int& sel
             std::cout << tr(" to exit.", cfg.language) << std::endl;
             std::cout << "---------------------------------\n";
             continue;
-        } else if (opt == 9 && mode == 2) { // Only allow option 9 if mode 2
+        } else if (opt == 10 && mode == 2) { // Only allow option 9 if mode 2
             // Set lever-to-key mapping (mode 2)
             static const std::vector<std::string> lever_names = {
                 "B9", "B8", "B7", "B6", "B5", "B4", "B3", "B2", "B1", "Neutral",
@@ -1052,9 +1069,6 @@ int main(int argc, char* argv[]) {
     std::set<int> last_pressed;
     int stable_idx = -1;
     auto last_event_time = std::chrono::steady_clock::now();
-    // For repeated up/down/scroll events
-    auto last_repeat_time = std::chrono::steady_clock::now();
-    bool first_repeat = true;
     // For credit repeat
     auto last_credit_time = std::chrono::steady_clock::now() - std::chrono::milliseconds(250);
     bool credit_prev_pressed = false;
@@ -1255,38 +1269,58 @@ int main(int argc, char* argv[]) {
         pressed.clear();
         int num_buttons = SDL_JoystickNumButtons(joy);
         for (int i = 0; i < num_buttons; ++i) {
-            if (SDL_JoystickGetButton(joy, i)) pressed.insert(i);
+            if (SDL_JoystickGetButton(joy, i)) {
+                pressed.insert(i);
+            }
         }
         int idx = match_combo(pressed, ordered_combos);
+        if (mode == 2 && idx >= 0 && idx < 15) {
+            int vk = config.lever_keycodes[idx];
+            if (vk > 0) {
+                // Send the key as a press and release
+                INPUT input = {0};
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = vk;
+                input.ki.dwFlags = 0;
+                SendInput(1, &input, sizeof(INPUT));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                input.ki.dwFlags = KEYEVENTF_KEYUP;
+                SendInput(1, &input, sizeof(INPUT));
+                print_colored("[Lever-to-Key] Sent key VK=0x" + std::to_string(vk) + "\n", COLOR_PINK);
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            }
+            continue;
+        }
         auto now = std::chrono::steady_clock::now();
         if (idx != stable_idx) {
             stable_idx = idx;
             last_event_time = now;
-            last_repeat_time = now;
-            first_repeat = true;
         }
+        // Debounce logic: Only config.debounce_ms is used for debounce timing.
+        // up_down_delay_ms and mouse_scroll_delay_ms are NOT used for debounce.
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_event_time).count();
-        auto repeat_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_repeat_time).count();
         if (idx != -1 && idx != last_idx && elapsed >= config.debounce_ms) {
-            // First event on new position
-            if (mode == 0) {
-                sendArrowKey(VK_UP); // Example: replace with actual logic for idx
-            } else if (mode == 1) {
-                sendMouseScroll(120); // Example: replace with actual logic for idx
+            if (last_idx != -1) {
+                int diff = idx - last_idx;
+                // Only move one step per debounce period for consistent timing
+                int step = (diff > 0) ? 1 : -1;
+                int next_idx = last_idx + step;
+                if (mode == 0) {
+                    sendArrowKey((step > 0) ? VK_DOWN : VK_UP, config.key_hold_time_ms);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(config.up_down_delay_ms));
+                } else if (mode == 1) {
+                    sendMouseScroll((step > 0) ? -120 : 120);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(config.mouse_scroll_delay_ms));
+                }
+                print_colored(names[last_idx] + " -> " + names[next_idx] + " : ", (step > 0) ? (FOREGROUND_YELLOW | FOREGROUND_INTENSITY) : (FOREGROUND_CYAN | FOREGROUND_INTENSITY));
+                print_colored((step > 0) ? "v" : "^", (step > 0) ? (FOREGROUND_GREEN | FOREGROUND_INTENSITY) : (FOREGROUND_PINK | FOREGROUND_INTENSITY));
+                std::cout << std::endl;
+                last_idx = next_idx;
+            } else if (idx == 9) {
+                print_colored(tr("Neutral position!", lang) + "\n", FOREGROUND_PINK | FOREGROUND_INTENSITY);
+                last_idx = idx;
             }
-            last_idx = idx;
-            last_repeat_time = now;
-            first_repeat = false;
-        } else if (idx != -1 && idx == last_idx && repeat_elapsed >= config.up_down_delay_ms) {
-            // Repeated event while holding position
-            if (mode == 0) {
-                sendArrowKey(VK_UP); // Example: replace with actual logic for idx
-            } else if (mode == 1) {
-                sendMouseScroll(120); // Example: replace with actual logic for idx
-            }
-            last_repeat_time = now;
-        } else if (idx == -1) {
-            last_idx = -1;
+            last_event_time = std::chrono::steady_clock::now();
         }
         last_pressed = pressed;
         // No sleep for high-frequency polling
