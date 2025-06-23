@@ -29,9 +29,9 @@ An easy-to-use Windows console application that translates lever and button inpu
 - **Parameter adjustment**  
   Fine-tune various parameters to balance input responsiveness and stability:
     - Debounce time
-    - Up/Down arrow delay adjustment
-    - Mouse scroll delay adjustment
-
+    - Up/Down arrow delay
+    - Mouse scroll delay
+    - Key hold time
 ## Requirements
 
 - Windows 7 or later
