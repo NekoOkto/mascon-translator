@@ -144,34 +144,121 @@ bool load_config(Config& cfg, const std::string& filename) {
     std::string line;
     int loaded = 0;
     int lever_keycode_count = 0;
+    cfg.lever_mappings.clear(); // Ensure clean state
+    cfg.lever_keycodes = std::vector<int>(15, 0); // Reset keycodes
     while (std::getline(ifs, line)) {
         if (line.empty() || line[0] == '#') continue;
-        if (line.find("debounce_ms=") == 0) { cfg.debounce_ms = std::stoi(line.substr(12)); ++loaded; continue; }
-        if (line.find("up_down_delay_ms=") == 0) { cfg.up_down_delay_ms = std::stoi(line.substr(17)); ++loaded; continue; }
-        if (line.find("mouse_scroll_delay_ms=") == 0) { cfg.mouse_scroll_delay_ms = std::stoi(line.substr(22)); ++loaded; continue; }
-        if (line.find("key_hold_time_ms=") == 0) { cfg.key_hold_time_ms = std::stoi(line.substr(16)); ++loaded; continue; } // New
-        if (line.find("last_mode=") == 0) { cfg.last_mode = std::stoi(line.substr(10)); ++loaded; continue; }
-        if (line.find("last_joystick=") == 0) { cfg.last_joystick = std::stoi(line.substr(14)); ++loaded; continue; }
-        if (line.find("language=") == 0) { cfg.language = line.substr(9); ++loaded; continue; } // New: load language
-        if (line.find("big_horn_button=") == 0) { cfg.big_horn_button = std::stoi(line.substr(16)); ++loaded; continue; }
-        if (line.find("small_horn_button=") == 0) { cfg.small_horn_button = std::stoi(line.substr(18)); ++loaded; continue; }
-        if (line.find("credit_button=") == 0) { cfg.credit_button = std::stoi(line.substr(14)); ++loaded; continue; }
-        if (line.find("test_menu_button=") == 0) { cfg.test_menu_button = std::stoi(line.substr(17)); ++loaded; continue; }
-        if (line.find("debug_mission_button=") == 0) { cfg.debug_mission_button = std::stoi(line.substr(21)); ++loaded; continue; }
-        if (line.find("profile=") == 0) { cfg.profile = line.substr(8); ++loaded; continue; } // New: load profile
-        // Lever mappings: after 10 values, next 15 lines are mappings
+        auto get_value = [](const std::string& line, size_t prefix_len) -> std::string {
+            std::string val = line.substr(prefix_len);
+            // Trim whitespace
+            val.erase(0, val.find_first_not_of(" \t"));
+            val.erase(val.find_last_not_of(" \t") + 1);
+            return val;
+        };
+        if (line.find("debounce_ms=") == 0) {
+            try {
+                std::string val = get_value(line, 12);
+                cfg.debounce_ms = val.empty() ? default_config.debounce_ms : std::stoi(val);
+            } catch (const std::exception&) { cfg.debounce_ms = default_config.debounce_ms; }
+            ++loaded; continue;
+        }
+        if (line.find("up_down_delay_ms=") == 0) {
+            try {
+                std::string val = get_value(line, 17);
+                cfg.up_down_delay_ms = val.empty() ? default_config.up_down_delay_ms : std::stoi(val);
+            } catch (const std::exception&) { cfg.up_down_delay_ms = default_config.up_down_delay_ms; }
+            ++loaded; continue;
+        }
+        if (line.find("mouse_scroll_delay_ms=") == 0) {
+            try {
+                std::string val = get_value(line, 22);
+                cfg.mouse_scroll_delay_ms = val.empty() ? default_config.mouse_scroll_delay_ms : std::stoi(val);
+            } catch (const std::exception&) { cfg.mouse_scroll_delay_ms = default_config.mouse_scroll_delay_ms; }
+            ++loaded; continue;
+        }
+        if (line.find("key_hold_time_ms=") == 0) {
+            try {
+                std::string val = get_value(line, 16);
+                cfg.key_hold_time_ms = val.empty() ? default_config.key_hold_time_ms : std::stoi(val);
+            } catch (const std::exception&) { cfg.key_hold_time_ms = default_config.key_hold_time_ms; }
+            ++loaded; continue;
+        }
+        if (line.find("last_mode=") == 0) {
+            try {
+                std::string val = get_value(line, 10);
+                cfg.last_mode = val.empty() ? default_config.last_mode : std::stoi(val);
+            } catch (const std::exception&) { cfg.last_mode = default_config.last_mode; }
+            ++loaded; continue;
+        }
+        if (line.find("last_joystick=") == 0) {
+            try {
+                std::string val = get_value(line, 14);
+                cfg.last_joystick = val.empty() ? default_config.last_joystick : std::stoi(val);
+            } catch (const std::exception&) { cfg.last_joystick = default_config.last_joystick; }
+            ++loaded; continue;
+        }
+        if (line.find("language=") == 0) {
+            std::string val = get_value(line, 9);
+            cfg.language = val.empty() ? default_config.language : val;
+            ++loaded; continue;
+        }
+        if (line.find("big_horn_button=") == 0) {
+            try {
+                std::string val = get_value(line, 16);
+                cfg.big_horn_button = val.empty() ? default_config.big_horn_button : std::stoi(val);
+            } catch (const std::exception&) { cfg.big_horn_button = default_config.big_horn_button; }
+            ++loaded; continue;
+        }
+        if (line.find("small_horn_button=") == 0) {
+            try {
+                std::string val = get_value(line, 18);
+                cfg.small_horn_button = val.empty() ? default_config.small_horn_button : std::stoi(val);
+            } catch (const std::exception&) { cfg.small_horn_button = default_config.small_horn_button; }
+            ++loaded; continue;
+        }
+        if (line.find("credit_button=") == 0) {
+            try {
+                std::string val = get_value(line, 14);
+                cfg.credit_button = val.empty() ? default_config.credit_button : std::stoi(val);
+            } catch (const std::exception&) { cfg.credit_button = default_config.credit_button; }
+            ++loaded; continue;
+        }
+        if (line.find("test_menu_button=") == 0) {
+            try {
+                std::string val = get_value(line, 17);
+                cfg.test_menu_button = val.empty() ? default_config.test_menu_button : std::stoi(val);
+            } catch (const std::exception&) { cfg.test_menu_button = default_config.test_menu_button; }
+            ++loaded; continue;
+        }
+        if (line.find("debug_mission_button=") == 0) {
+            try {
+                std::string val = get_value(line, 21);
+                cfg.debug_mission_button = val.empty() ? default_config.debug_mission_button : std::stoi(val);
+            } catch (const std::exception&) { cfg.debug_mission_button = default_config.debug_mission_button; }
+            ++loaded; continue;
+        }
+        if (line.find("profile=") == 0) {
+            std::string val = get_value(line, 8);
+            cfg.profile = val.empty() ? default_config.profile : val;
+            ++loaded; continue;
+        }
+        // Lever mappings: after 11 values, next 15 lines are mappings
         if (loaded >= 11 && cfg.lever_mappings.size() < 15) {
             std::istringstream iss(line);
             std::set<int> s;
             int b;
             while (iss >> b) s.insert(b);
             cfg.lever_mappings.push_back(s);
+            continue;
         }
         // Lever keycodes: after lever mappings, next 15 lines are keycodes
         if (loaded >= 26 && lever_keycode_count < 15) {
             try {
-                cfg.lever_keycodes[lever_keycode_count++] = std::stoi(line);
-            } catch (...) {}
+                std::string val = get_value(line, 0);
+                cfg.lever_keycodes[lever_keycode_count++] = val.empty() ? 0 : std::stoi(val);
+            } catch (const std::exception&) {
+                cfg.lever_keycodes[lever_keycode_count++] = 0;
+            }
             continue;
         }
     }
