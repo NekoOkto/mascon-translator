@@ -1,9 +1,8 @@
-
-**Head over to the [Releases](https://github.com/NekoOkto/mascon-translator/releases) for the latest version!**
-
 # Mascon Lever Input Translator
 
 An easy-to-use Windows console application that translates lever and button inputs from a mascon-style (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. 
+
+**Head over to the [Releases](https://github.com/NekoOkto/mascon-translator/releases) for the latest version!**
 
 ## Notes
  - I am not a developer, so the code for this is an absolute mess. While I did put in many, many hours refining this code and getting it to run and function properly, AI was used heavily in this process. 
