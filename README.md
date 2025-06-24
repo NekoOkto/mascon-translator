@@ -1,3 +1,6 @@
+
+**Head over to the [Releases](https://github.com/NekoOkto/mascon-translator/releases) for the latest version!**
+
 # Mascon Lever Input Translator
 
 An easy-to-use Windows console application that translates lever and button inputs from a mascon-style (train controller) or joystick into keyboard and mouse events, enabling use with PC games and emulators. 
@@ -32,11 +35,25 @@ An easy-to-use Windows console application that translates lever and button inpu
     - Up/Down arrow delay
     - Mouse scroll delay
     - Key hold time
-## Requirements
+
+## Usage
+
+1. Run `mascon_translator.exe`.
+2. On first launch, select your language, joystick, and input mode.
+3. Use the lever and buttons to send keyboard/mouse events to your games.
+4. Press `Tab` to open the settings menu at any time.
+5. Use the profile system to save and switch between different configurations.
+
+## Configuration
+
+- Settings are saved in `mascon_translator.cfg`.
+- Translation files are in the `lang/` directory (`lang_xx.json`).
+- All user-facing text is translatable; you can add or improve translations by editing these files.
+
+## Requirements (for Building)
 
 - Windows 7 or later
 - [SDL2](https://www.libsdl.org/) library (see build instructions)
-- A compatible joystick or mascon controller
 
 ## Building
 
@@ -73,19 +90,6 @@ An easy-to-use Windows console application that translates lever and button inpu
    g++ -std=c++11 -IC:/libs/SDL2/x86_64-w64-mingw32/include/SDL2 -I./include -I. -LC:/libs/SDL2/x86_64-w64-mingw32/lib Untitled-1.cpp -lmingw32 -lSDL2main -lSDL2 -o .\build\mascon_translator.exe
    ```
 
-## Usage
-
-1. Run `mascon_translator.exe`.
-2. On first launch, select your language, joystick, and input mode.
-3. Use the lever and buttons to send keyboard/mouse events to your games.
-4. Press `Tab` to open the settings menu at any time.
-5. Use the profile system to save and switch between different configurations.
-
-## Configuration
-
-- Settings are saved in `mascon_translator.cfg`.
-- Translation files are in the `lang/` directory (`lang_xx.json`).
-- All user-facing text is translatable; you can add or improve translations by editing these files.
 
 ## License
 
