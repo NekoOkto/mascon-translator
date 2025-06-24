@@ -1182,9 +1182,10 @@ int main(int argc, char* argv[]) {
                     if (b == config.debug_mission_button) debug_mission_now = true;
                 }
             }
-            // Only send once per press for non-credit inputs
-            if (big_horn_now && !big_horn_prev_pressed) {
-                // Send Enter using scan code
+            // --- Big Horn Pedal (Enter) HOLD logic ---
+            static bool big_horn_key_down = false;
+            if (big_horn_now && !big_horn_key_down) {
+                // Send Enter key down
                 INPUT input = {0};
                 input.type = INPUT_KEYBOARD;
                 input.ki.wVk = VK_RETURN;
@@ -1192,14 +1193,24 @@ int main(int argc, char* argv[]) {
                 input.ki.dwFlags = KEYEVENTF_SCANCODE;
                 input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                print_colored("[Big Horn Pedal] Enter DOWN\n", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
+                big_horn_key_down = true;
+            } else if (!big_horn_now && big_horn_key_down) {
+                // Send Enter key up
+                INPUT input = {0};
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_RETURN;
+                input.ki.wScan = MapVirtualKey(VK_RETURN, MAPVK_VK_TO_VSC);
                 input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+                input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                print_colored("[Big Horn Pedal] Enter sent\n", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                print_colored("[Big Horn Pedal] Enter UP\n", FOREGROUND_YELLOW | FOREGROUND_INTENSITY);
+                big_horn_key_down = false;
             }
-            if (small_horn_now && !small_horn_prev_pressed) {
-                // Send Space using scan code
+            // --- Small Horn Pedal (Space) HOLD logic ---
+            static bool small_horn_key_down = false;
+            if (small_horn_now && !small_horn_key_down) {
+                // Send Space key down
                 INPUT input = {0};
                 input.type = INPUT_KEYBOARD;
                 input.ki.wVk = VK_SPACE;
@@ -1207,12 +1218,22 @@ int main(int argc, char* argv[]) {
                 input.ki.dwFlags = KEYEVENTF_SCANCODE;
                 input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                print_colored("[Small Horn Pedal] Spacebar DOWN\n", FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+                small_horn_key_down = true;
+            } else if (!small_horn_now && small_horn_key_down) {
+                // Send Space key up
+                INPUT input = {0};
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_SPACE;
+                input.ki.wScan = MapVirtualKey(VK_SPACE, MAPVK_VK_TO_VSC);
                 input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+                input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                print_colored("[Small Horn Pedal] Spacebar sent\n", FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                print_colored("[Small Horn Pedal] Spacebar UP\n", FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+                small_horn_key_down = false;
             }
+            // --- Test Menu (Right Shift) logic ---
+            static bool test_menu_prev_pressed = false;
             if (test_menu_now && !test_menu_prev_pressed) {
                 // Send Right Shift using scan code
                 INPUT input = {0};
@@ -1222,12 +1243,21 @@ int main(int argc, char* argv[]) {
                 input.ki.dwFlags = KEYEVENTF_SCANCODE;
                 input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                print_colored("[Test Menu] RightShift DOWN\n", FOREGROUND_PINK | FOREGROUND_INTENSITY);
+            } else if (!test_menu_now && test_menu_prev_pressed) {
+                // Release Right Shift
+                INPUT input = {0};
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_RSHIFT;
+                input.ki.wScan = MapVirtualKey(VK_RSHIFT, MAPVK_VK_TO_VSC);
                 input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+                input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                print_colored("[Test Menu] RightShift sent\n", FOREGROUND_PINK | FOREGROUND_INTENSITY);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                print_colored("[Test Menu] RightShift UP\n", FOREGROUND_PINK | FOREGROUND_INTENSITY);
             }
+            test_menu_prev_pressed = test_menu_now;
+            // --- Debug Mission (Left Shift) logic ---
+            static bool debug_mission_prev_pressed = false;
             if (debug_mission_now && !debug_mission_prev_pressed) {
                 // Send Left Shift using scan code
                 INPUT input = {0};
@@ -1237,44 +1267,8 @@ int main(int argc, char* argv[]) {
                 input.ki.dwFlags = KEYEVENTF_SCANCODE;
                 input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
-                SendInput(1, &input, sizeof(INPUT));
-                print_colored("[Debug Mission Select] LeftShift sent\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            }
-            // Update previous states and release keys if needed
-            if (!big_horn_now && big_horn_prev_pressed) {
-                // Release Enter
-                INPUT input = {0};
-                input.type = INPUT_KEYBOARD;
-                input.ki.wVk = VK_RETURN;
-                input.ki.wScan = MapVirtualKey(VK_RETURN, MAPVK_VK_TO_VSC);
-                input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
-                input.ki.dwExtraInfo = GetMessageExtraInfo();
-                SendInput(1, &input, sizeof(INPUT));
-            }
-            if (!small_horn_now && small_horn_prev_pressed) {
-                // Release Space
-                INPUT input = {0};
-                input.type = INPUT_KEYBOARD;
-                input.ki.wVk = VK_SPACE;
-                input.ki.wScan = MapVirtualKey(VK_SPACE, MAPVK_VK_TO_VSC);
-                input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
-                input.ki.dwExtraInfo = GetMessageExtraInfo();
-                SendInput(1, &input, sizeof(INPUT));
-            }
-            if (!test_menu_now && test_menu_prev_pressed) {
-                // Release Right Shift
-                INPUT input = {0};
-                input.type = INPUT_KEYBOARD;
-                input.ki.wVk = VK_RSHIFT;
-                input.ki.wScan = MapVirtualKey(VK_RSHIFT, MAPVK_VK_TO_VSC);
-                input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
-                input.ki.dwExtraInfo = GetMessageExtraInfo();
-                SendInput(1, &input, sizeof(INPUT));
-            }
-            if (!debug_mission_now && debug_mission_prev_pressed) {
+                print_colored("[Debug Mission] LeftShift DOWN\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
+            } else if (!debug_mission_now && debug_mission_prev_pressed) {
                 // Release Left Shift
                 INPUT input = {0};
                 input.type = INPUT_KEYBOARD;
@@ -1283,11 +1277,10 @@ int main(int argc, char* argv[]) {
                 input.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
                 input.ki.dwExtraInfo = GetMessageExtraInfo();
                 SendInput(1, &input, sizeof(INPUT));
+                print_colored("[Debug Mission] LeftShift UP\n", FOREGROUND_RED | FOREGROUND_INTENSITY);
             }
-            big_horn_prev_pressed = big_horn_now;
-            small_horn_prev_pressed = small_horn_now;
-            test_menu_prev_pressed = test_menu_now;
             debug_mission_prev_pressed = debug_mission_now;
+            // ...existing code for credit button and rest of loop...
         }
         // Credit repeat logic
         if (config.credit_button >= 0) {
